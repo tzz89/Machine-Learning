@@ -1,0 +1,5 @@
+# conda install pytorch pytorch-cuda=11.8 -c pytorch -c nvidia
+transformers
+sympy==1.13.1
+jupyterlab
+tiktoken # openai Bytepair encoding

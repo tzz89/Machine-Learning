@@ -1,0 +1,6 @@
+#conda install -c dglteam/label/th21_cu121 dgl
+jupyterlab
+pandas
+pydantic==2.0
+torch==2.4.0
+ipywidgets
