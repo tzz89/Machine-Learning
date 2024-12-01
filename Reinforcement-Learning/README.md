@@ -12,10 +12,24 @@
    1. policy-based method (which action to take)
       1. Deterministic where policy will always return a same action given the same state
       2. stochastic where there is a probability distribuion over the different actions
-   2. value-based method(which state is more valuable)
+   2. value-based method(which state is more valuable), In this method, we want to find the optimal value function that leads to having optimal policy
       1. Traditional method - creates Q table
       2. Deep learning method - where the number of states is too huge
-   
+8. there 2 types of value based function
+      1. State-Value E(s): the expected return if the agent starts at that state and follows the policy
+      2. Action-Value E(s,as): Output the expected return if the agent starts at the start and takes that action and follow the policy 
+9. Monte Carlo vs Temporal Difference Learning
+      1. In monte carlo, the agent updates the value function after the entire episode (uses actual reward at that state)
+      2. In Temporal Difference, the agent update the value function after the next step (uses the discounted value of next state)
+
+## RL algorithms
+1. Q-Learning: Action Value based method that uses temporal difference approach (update after each step)
+   1. If we have the optimal Q-function, we will have the optimal policy as we know what action to take at each action-state
+   2. Q-learning is an off-policy algorithm as the policy for acting (episilon greedy) is different from updating
+   3. Algorithm
+      1. Select an action based on epsilon-greedy method
+      2. get reward based on action taken in (1)
+      3. update Q-table using TD equation 
 
 
 ### RL Libraries abd simulators

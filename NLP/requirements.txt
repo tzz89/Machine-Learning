@@ -3,3 +3,4 @@ transformers
 sympy==1.13.1
 jupyterlab
 tiktoken # openai Bytepair encoding
+matplotlib

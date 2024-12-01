@@ -15,3 +15,4 @@
 3. unsloth: https://github.com/unslothai/unsloth
 4. OpenAI triton: https://github.com/triton-lang/triton
 5. Pytorch tensorRT: https://github.com/pytorch/TensorRT
+6. TensorRT-LLM: https://github.com/NVIDIA/TensorRT-LLM
