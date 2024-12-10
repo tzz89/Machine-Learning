@@ -1,4 +1,4 @@
-#conda install -c dglteam/label/th21_cu121 dgl
+#conda install -c dglteam/label/th24_cu121 dgl
 jupyterlab
 pandas
 pydantic==2.0

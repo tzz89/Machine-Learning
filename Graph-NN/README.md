@@ -102,6 +102,16 @@ The main idea of GAT is the calulation of the the atttention coefficient and sto
     4. aggregate on the (coefficient * neighbour feature) 
 
 
+## GraphTransformer
+Paper:https://arxiv.org/pdf/2012.09699
+Architecture
+![alt text](./assets/Graph_Transformer.png)
+
+1. Uses laplacian Positional Encoding
+2. The calculated attention is sparsed as it is multiplied by the adj matrix
+
+
+
 ## Scaling up to large graphs
 1. Mini batch training
    1. Still have to load the full graph into CPU memory

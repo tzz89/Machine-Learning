@@ -15,6 +15,9 @@ Special tokens are additional tokens that are added to the vocabulary so they ca
 4. [PAD] padding
 
 
+# Tokenization is at the heart of LLM 
+Many of the issues are due to tokenization issues
+
 
 ## Types of tokenizers
 1.  Byte-Pair Encoding (BPE)
@@ -23,6 +26,14 @@ Special tokens are additional tokens that are added to the vocabulary so they ca
 3.  Unigram
 4.  SentencePiece - uses 'space' in the set of characters as some languages like chinese, japanese do not have spaces
     1. Uses BPE encoding / Unigram / char / word
+
+
+## BPE
+Find the most common byte pair and replace with a placeholder and keeps repeating this process
+
+
+## Tiktokenizer webapp
+https://tiktokenizer.vercel.app/
 
 
 
