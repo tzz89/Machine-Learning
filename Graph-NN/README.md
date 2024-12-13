@@ -93,6 +93,156 @@ def evaluation(model, g_main, g_val_pos, g_val_neg):
 
     return loss, auc_score
 ```
+## Heterogenous graph format in DGL
+1.  Nodes/Edges of different types have independent ID space and feature storage
+2.  The message passing on heterographs can be split into two parts:
+    1.  Message computation and aggregation for each relation r.
+    2.  Reduction that merges the aggregation results from all relations for each node type.
+
+```python
+graph_data = {
+    ('user_id', 'link', 'transaction'): (torch.tensor([0,1]), torch.tensor([1,2])),
+    ('transaction', 'link', 'user_id'): (torch.tensor([1,2]), torch.tensor([2,1])),
+    ('ci', 'link', 'transaction'): (torch.tensor([0,1]), torch.tensor([2,3])),
+    ('transaction', 'link', 'ci'): (torch.tensor([2,3]), torch.tensor([0,1]))
+}
+num_node_dict = {
+    'user_id':5,
+    'ci': 20,
+    'transaction':4
+}
+
+g = dgl.heterograph(graph_data,num_node_dict)
+g.nodes['user_id'].data['hv'] = torch.ones(5,1)
+print("num edges for this type", g.num_edges(('ci', 'link', 'transaction')))
+g.edges[('ci', 'link', 'transaction')].data['he']= torch.ones(2,2)
+
+## Create edge type subgraph
+sub_graph = dgl.edge_type_subgraph(g, [('user_id', 'link', 'transaction'),('transaction', 'link', 'user_id')])
+
+
+## Add bidirectional edges
+g = dgl.to_bidirected(g)
+
+## Message passing
+import dgl.function as fn
+
+for c_etype in g.canonical_etypes:
+    srctype, etype, dsttype = c_etype
+    Wh = self.weight[etype](feat_dict[srctype])
+    # Save it in graph for message passing
+    G.nodes[srctype].data['Wh_%s' % etype] = Wh
+    # Specify per-relation message passing functions: (message_func, reduce_func).
+    # Note that the results are saved to the same destination feature 'h', which
+    # hints the type wise reducer for aggregation.
+    funcs[etype] = (fn.copy_u('Wh_%s' % etype, 'm'), fn.mean('m', 'h'))
+# Trigger message passing of multiple types.
+G.multi_update_all(funcs, 'sum')
+# return the updated node feature dictionary
+return {ntype : G.nodes[ntype].data['h'] for ntype in G.ntypes}
+```
+## Heterogenous model and training loop sample for node classification
+
+```python
+class RGCN(nn.Module):
+    def __init__(self, in_feats:int, hidden_feat:int, out_feat:int, rel_names:list[str]):
+        super().__init__()
+        self.conv1 = dglnn.HeteroGraphConv({
+            rel: dglnn.GraphConv(in_feats, hidden_feat) # rel is based on edge type
+            for rel in rel_names
+        }, aggregate='sum')
+
+        self.conv2 = dglnn.HeteroGraphConv({
+            rel: dglnn.GraphConv(hidden_feat, out_feat)
+            for rel in rel_names
+        }, aggregate='sum')
+
+    def forward(self, graph:dgl.graph, inputs:dict):
+        h = self.conv1(graph, inputs) # returns a dictionary similar to input
+        h = {node_type:F.relu(features) for node_type, features in h.items()}
+        h = self.conv2(graph, h)
+        return h
+
+# hetero_graph.etypes = ['clicked-by', 'disliked-by', 'click', 'dislike', 'follow', 'followed-by']
+model = RGCN(n_hetero_features, 20, n_user_classes, hetero_graph.etypes)
+user_feats = hetero_graph.nodes['user'].data['feature']
+item_feats = hetero_graph.nodes['item'].data['feature']
+labels = hetero_graph.nodes['user'].data['label']
+train_mask = hetero_graph.nodes['user'].data['train_mask']
+
+
+node_features = {'user': user_feats, 'item': item_feats}
+h_dict = model(hetero_graph, {'user': user_feats, 'item': item_feats})
+h_user = h_dict['user'] # torch.Size([1000, 5])
+h_item = h_dict['item'] # torch.Size([500, 5])
+
+opt = torch.optim.AdamW(model.parameters())
+for epoch in range(10):
+    model.train()
+    logits = model(hetero_graph, node_features) # [num_node, class]
+    loss = F.cross_entropy(logits['user'], labels) # label: [num_node]
+    
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    print(loss.item())
+
+```
+
+## Heterogenous model and training loop sample for edge predict 
+```python
+class HeteroDotProductPredictor(nn.Module):
+    def forward(self, graph, h, edge_type):
+        with graph.local_scope():
+            graph.ndata['h'] = h
+            graph.apply_edges(fn.u_dot_v('h','h','score'), etype= edge_type)
+            return graph.edges[edge_type].data['score']
+
+class MLPPredictor(nn.Module):
+    def __init__(self, in_features, out_classes):
+        super().__init__()
+        self.linear = nn.Linear(in_features, out_classes)
+
+    def apply_edges(self, edges):
+        h_u = edges['src']['h']
+        h_v = edges['dst']['h']
+        score = self.linear(torch.concat([h_u,h_v],1)) 
+        return {'score':score}
+        
+
+class Model(nn.Module):
+    def __init__(self, in_features, hidden_features, out_features, rel_names):
+        super().__init__()
+        self.sage = RGCN(in_features, hidden_features, out_features, rel_names)
+        self.pred = HeteroDotProductPredictor()
+    def forward(self, g, x, etype):
+        h = self.sage(g, x)
+        return self.pred(g, h, etype)
+
+model = Model(10, 20, 5, hetero_graph.etypes)
+user_feats = hetero_graph.nodes['user'].data['feature']
+item_feats = hetero_graph.nodes['item'].data['feature']
+label = hetero_graph.edges['click'].data['label']
+train_mask = hetero_graph.edges['click'].data['train_mask']
+node_features = {'user': user_feats, 'item': item_feats}
+
+opt = torch.optim.Adam(model.parameters())
+for epoch in range(10):
+    pred = model(hetero_graph, node_features, 'click')
+    loss = ((pred[train_mask] - label[train_mask]) ** 2).mean()
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    print(loss.item())
+
+```
+
+
+## Graph formats
+1. coo
+2. csr
+3. csc
+
    
 ## GAT
 The main idea of GAT is the calulation of the the atttention coefficient and store it in the edge data

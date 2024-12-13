@@ -29,7 +29,16 @@ Many of the issues are due to tokenization issues
 
 
 ## BPE
-Find the most common byte pair and replace with a placeholder and keeps repeating this process
+Find the most common byte pair and replace with a placeholder and keeps repeating this process 
+1. UTF-8 encoding is a rule of interpreting the character bytes
+   1. For the first 128 "bytes" eg \x00 to \x80, they are single characters which corresponds to the ascii values
+   2. If the the byte is more than \x80, it signals a multi byte sequence with the length
+2. The special tokens that are added are not part of the BPE algorithm
+
+## Sentencepieces
+sentence pieces runs BPE on the unicode code points directly
+1. Rare codepoints is either mapped into UNK token or if byte_fallback is turned on, it encodes them with utf-8 and then encodes the raw bytes
+
 
 
 ## Tiktokenizer webapp
@@ -42,3 +51,7 @@ https://tiktokenizer.vercel.app/
    1. Documentation: https://huggingface.co/docs/tokenizers/index
 2. Google SentencePiece https://github.com/google/sentencepiece
 3. OpenAI BPE https://github.com/openai/tiktoken
+
+
+## Tokenization tutorial
+1. AndrewAndrej Karpathy tokenizer from scratch: https://www.youtube.com/watch?v=zduSFxRajkE&t=2098s
