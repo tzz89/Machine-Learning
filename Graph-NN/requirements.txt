@@ -1,8 +1,9 @@
-#conda install -c dglteam/label/th24_cu121 dgl
+#conda install -c dglteam/label/th21_cu121 dgl
 jupyterlab
 pandas
 pydantic==2.0
-torch==2.4.0
+torch==2.1.0
 ipywidgets
 scikit-learn
 ogb
+numpy==1.26.4

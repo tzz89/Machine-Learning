@@ -21,6 +21,7 @@
    1. Layer norm have trainable parameter for scaling and shifting 
    2. Layer norm is applied to the feature/hidden dim
 7. Gelu Activation
+8. K-V cache for decoder model
 
 ## Loss functions
 1. During pretraining (next token prediction)
@@ -136,8 +137,19 @@ def replace_linear_with_lora(model, rank, alpha):
 2. AlpacaEval: measure against GPT4
 3. LMSYS chatbot arena: Crowd sourcing eval
 
+## LLM Embedding models
+Embedding are used for RAG
+Benchmark: MTBE
+reference: https://www.youtube.com/watch?v=VIqXNRsRRQo&t=493s
+1. OpenAI
+2. Nomic Embed
+3. Jina Embed
+4. cde-small-v1 
 
-
+## Post-Training and alignment papers
+1. OpenAI Safety Paper: https://openai.com/index/deliberative-alignment/
+2. Math Reasoning: https://arxiv.org/abs/2412.15084
+3. Large Action Model: https://arxiv.org/abs/2412.10047
 ## Tutorial
 1. Overview of LLM development: https://www.youtube.com/watch?v=kPGTx4wcm_w
 

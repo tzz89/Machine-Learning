@@ -237,6 +237,48 @@ for epoch in range(10):
 
 ```
 
+## Heterogenous neighbourhood sampling
+1. The process is very similar to non sampling method. The only change is in the forward method, where we will use blocks for each layer 
+```python
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+dataset = gb.BuiltinDataset("ogbn-mag").load()
+g = dataset.graph
+feature = dataset.feature
+train_set = dataset.tasks[0].train_set
+datapipe = gb.ItemSampler(train_set, batch_size=1024, shuffle=True)
+datapipe = datapipe.sample_neighbor(g, [10, 10]) # 2 layers.
+datapipe = datapipe.fetch_feature(
+    feature, node_feature_keys={"author": ["feat"], "paper": ["feat"]}
+)
+datapipe = datapipe.copy_to(device)
+dataloader = gb.DataLoader(datapipe)
+
+
+for data in dataloader:
+model = StochasticTwoLayerRGCN(in_features, hidden_features, out_features, etypes)
+model = model.to(device)
+opt = torch.optim.Adam(model.parameters())
+
+for data in dataloader:
+    # For heterogeneous graphs, we need to specify the node types and
+    # feature name when accessing the node features. So does the labels.
+    input_features = {
+        "author": data.node_features[("author", "feat")],
+        "paper": data.node_features[("paper", "feat")]
+    }
+    output_labels = data.labels["paper"]
+    output_predictions = model(data.blocks, input_features)
+    loss = compute_loss(output_labels, output_predictions)
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+
+```
+
+## Exact offline inference on large graph
+During inference, we dont want to do neighbourhood sampling
+
+
 
 ## Graph formats
 1. coo
