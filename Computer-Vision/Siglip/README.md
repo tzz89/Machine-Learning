@@ -48,3 +48,4 @@ Siglip and Clip are pretrained using constrastive pretraining
 1. Clip Paper: https://arxiv.org/pdf/2103.00020
 2. huggingface siglip https://huggingface.co/docs/transformers/en/model_doc/siglip
 3. Contrastive Learning https://www.youtube.com/watch?v=u-X_nZRsn5M
+4. Jina Clip V2 https://jina.ai/news/jina-clip-v2-multilingual-multimodal-embeddings-for-text-and-images/
